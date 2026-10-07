@@ -15,14 +15,14 @@
 需要 Node.js 22.16 或更新版本。
 
 ```sh
-npm install -g https://github.com/aimakersummit/guyu_cli
+npm install -g --install-links https://github.com/aimakersummit/guyu_cli
 guyu --help
 ```
 
 也可以下载或克隆仓库，在仓库根目录执行：
 
 ```sh
-npm install -g .
+npm install -g --install-links .
 guyu --help
 ```
 

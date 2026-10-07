@@ -11,11 +11,13 @@
 ## 安装
 
 ```sh
-npm install -g <用户提供的GitHub仓库URL>
+npm install -g --install-links <用户提供的GitHub仓库URL>
 guyu --help
 ```
 
-也可以下载或克隆到新目录，在仓库根目录运行 npm install -g .。仓库带预构建程序，没有 prepare、preinstall、postinstall 脚本，不需要安装开发依赖或构建整个网站。GitHub 安装通常需要 Git；没有 Git 时可以下载仓库 ZIP，解压后本地安装。
+`--install-links` 确保安装实际文件，避免部分 npm 配置生成指向临时克隆目录的失效链接。
+
+也可以下载或克隆到新目录，在仓库根目录运行 npm install -g --install-links .。仓库带预构建程序，没有 prepare、preinstall、postinstall 脚本，不需要安装开发依赖或构建整个网站。GitHub 安装通常需要 Git；没有 Git 时可以下载仓库 ZIP，解压后本地安装。
 
 遇到安装权限错误，不要直接使用 sudo 或管理员权限。优先使用用户级 Node.js，或设置专用用户目录作为 npm 安装前缀，再将命令入口加入 PATH。macOS 和 Linux 的入口在前缀下的 bin，Windows 的入口在前缀根目录。
 
