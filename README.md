@@ -42,7 +42,7 @@ guyu
 
 无参数运行进入连续对话，/new 开启新会话，/quit 退出。--scope all、1、3、6、12 选择全部或最近相应月数的内容；--talk talkId 限定视频；--json 输出结构化 JSON，适合 Agent 和脚本处理。
 
-默认连接 https://ask.aimakersummit.com/api。凭据保存在 ~/.config/guyu/config.json，权限为仅当前用户可读写，七天后重新登录。guyu logout 退出并删除本机凭据。
+默认连接 [https://ask.aimakersummit.com/api](https://ask.aimakersummit.com/api)。凭据保存在 ~/.config/guyu/config.json，权限为仅当前用户可读写，七天后重新登录。guyu logout 退出并删除本机凭据。
 
 CLI 只在执行命令时请求服务，没有后台轮询。安装、查看帮助和本地测试不调用生产模型，不发送短信。执行 guyu login 才发送短信，搜索和提问会访问服务。
 
