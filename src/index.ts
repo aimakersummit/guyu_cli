@@ -4,6 +4,8 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
+import { browserLogin } from './browser-login.js';
+import { beginAgentLogin, finishAgentLogin } from './agent-login.js';
 import type { ChatEvent, Citation, PublicTalk, Scope } from './contracts.js';
 
 type Config = { api: string; token?: string; expiresAt?: number };
@@ -12,6 +14,7 @@ type CliOptions = { api: string; scope: Scope; json: boolean; args: string[] };
 const DEFAULT_API = 'https://ask.aimakersummit.com/api';
 const CONFIG_PATH =
   process.env.GUYU_CONFIG?.trim() || join(homedir(), '.config', 'guyu', 'config.json');
+const PENDING_PATH = `${CONFIG_PATH}.login.json`;
 
 class CliError extends Error {
   constructor(
@@ -106,33 +109,12 @@ async function request<T>(
 }
 
 async function login(api: string, config: Config): Promise<void> {
-  const rl = createInterface({ input: stdin, output: stdout });
   try {
-    const phone = (await rl.question('手机号：')).trim();
-    await request(
-      api,
-      '/auth/sms/send',
-      { api },
-      {
-        method: 'POST',
-        body: JSON.stringify({ phone }),
-      },
-    );
-    const code = (await rl.question('短信验证码：')).trim();
-    const result = await request<{ token: string; expiresAt: number }>(
-      api,
-      '/auth/sms/verify',
-      { api },
-      {
-        method: 'POST',
-        body: JSON.stringify({ phone, code }),
-      },
-    );
-    if (!result.token) throw new CliError('登录成功，但服务端没有返回 CLI 凭据，请更新服务端');
+    const result = await browserLogin(api, { announce: (url) => stdout.write(`请在浏览器中确认授权。若未自动打开，请在本机浏览器访问：\n${url}\n`) });
     await saveConfig({ api, token: result.token, expiresAt: result.expiresAt });
     stdout.write('登录成功，凭据已安全保存在本机。\n');
-  } finally {
-    rl.close();
+  } catch (error) {
+    throw new CliError(error instanceof Error ? error.message : '登录失败');
   }
 }
 
@@ -284,7 +266,7 @@ async function search(api: string, config: Config, keyword: string, json: boolea
 
 function help(): void {
   stdout.write(
-    `谷雨 CLI\n\n用法\n  guyu login\n  guyu 你的问题\n  guyu                     进入连续对话\n  guyu search 关键词\n  guyu logout\n\n范围\n  --scope all|1|3|6|12\n  --talk talkId\n\n其他\n  --api https://example.com/api\n  --json\n`,
+    `谷雨 CLI\n\n用法\n  guyu login               为 Agent 生成授权链接并退出\n  guyu login finish        用户网页授权后领取结果一次\n  guyu login cancel        取消待完成的登录\n  guyu 你的问题\n  guyu                     进入连续对话\n  guyu search 关键词\n  guyu logout\n\n范围\n  --scope all|1|3|6|12\n  --talk talkId\n\n其他\n  --api https://example.com/api\n  --json\n`,
   );
 }
 
@@ -294,11 +276,33 @@ async function main(): Promise<void> {
   config.api = options.api;
   const [command, ...rest] = options.args;
   if (command === 'help' || command === '--help' || command === '-h') return help();
-  if (command === 'login') return login(options.api, config);
+  if (command === 'login') {
+    try {
+      if (rest[0] === 'browser') return await login(options.api, config);
+      if (rest[0] === 'cancel') {
+        await rm(PENDING_PATH, { force: true });
+        stdout.write(`${JSON.stringify({ status: 'cancelled' })}\n`);
+        return;
+      }
+      if (rest[0] === 'finish') {
+        const result = await finishAgentLogin(PENDING_PATH);
+        if (result.status === 'authorized') {
+          await saveConfig({ api: result.api, token: result.token, expiresAt: result.expiresAt });
+          await rm(PENDING_PATH, { force: true });
+          stdout.write(`${JSON.stringify({ status: 'authorized', message: '登录成功' })}\n`);
+        } else stdout.write(`${JSON.stringify({ status: result.status, message: result.status === 'pending' ? '用户尚未确认授权。等待用户回复后再领取，不要轮询。' : '用户已取消授权' })}\n`);
+        return;
+      }
+      if (rest.length) throw new CliError('登录参数不正确');
+      stdout.write(`${JSON.stringify(await beginAgentLogin(options.api, PENDING_PATH))}\n`);
+      return;
+    } catch (error) { throw new CliError(error instanceof Error ? error.message : '登录失败'); }
+  }
   if (command === 'logout') {
     if (config.token)
       await request(options.api, '/auth/logout', config, { method: 'POST', body: '{}' });
     await rm(CONFIG_PATH, { force: true });
+    await rm(PENDING_PATH, { force: true });
     stdout.write('已退出登录并删除本机凭据。\n');
     return;
   }

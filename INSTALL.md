@@ -1,34 +1,42 @@
-# 给安装 Agent 的指引
+# Agent 安装与授权指引
 
-用户授权安装谷雨 CLI 后，按下面步骤安装和验证。这里只安装客户端，不部署服务端。
-
-## 安装前
-
-1. 检查 node --version 和 npm --version，需要 Node.js 22.16 或更新版本。
-2. Node.js 不符合要求时，优先使用机器现有的用户级版本管理器，或让用户安装官方版本。不要擅自覆盖系统 Node.js，不要使用未经检查的远程安装脚本。
-3. 确认仓库来自用户提供的 GitHub 链接，阅读 package.json，检查 dist/guyu.mjs 存在。
+以下命令全部由 Agent 执行，不要要求用户打开终端、输入命令或启动 CLI。用户只需点击授权链接。
 
 ## 安装
 
+需要 Node.js 22.16 或更新版本。先检查 Node.js 与 npm；缺少运行环境时说明情况并征求用户同意。克隆仓库，或更新已有 checkout，然后在仓库目录执行：
+
 ```sh
-npm install -g --install-links <用户提供的GitHub仓库URL>
+npm install -g --install-links .
 guyu --help
 ```
 
-`--install-links` 确保安装实际文件，避免部分 npm 配置生成指向临时克隆目录的失效链接。
+dist/guyu.mjs 已预构建，无需部署服务器、模型 API Key 或后台常驻服务。全局目录无权限时使用用户可写的 npm 前缀，不擅自使用 sudo。
 
-也可以下载或克隆到新目录，在仓库根目录运行 npm install -g --install-links .。仓库带预构建程序，没有 prepare、preinstall、postinstall 脚本，不需要安装开发依赖或构建整个网站。GitHub 安装通常需要 Git；没有 Git 时可以下载仓库 ZIP，解压后本地安装。
+## 生成链接
 
-遇到安装权限错误，不要直接使用 sudo 或管理员权限。优先使用用户级 Node.js，或设置专用用户目录作为 npm 安装前缀，再将命令入口加入 PATH。macOS 和 Linux 的入口在前缀下的 bin，Windows 的入口在前缀根目录。
+```sh
+guyu login --json
+```
 
-## 验证与登录
+命令生成授权链接后立即退出，不需要保持进程运行。读取返回 JSON 的 authorizationUrl，将完整网址作为可点击的 Markdown 链接发在对话里，例如标签为点击授权谷雨。不要只展示原始 JSON，不要要求用户自己执行登录命令，不要打开终端窗口。
 
-必须运行 guyu --help 确认安装成功。不需要调用生产提问接口验证安装，不要自动发送短信。
+让用户在网页完成登录并点击确认授权，然后回到对话告知已完成。不要读取或代填手机号、验证码、浏览器 Cookie，不要读取和输出本机凭据文件。不要替用户点击确认授权。
 
-需要知识库权限时，让用户自己运行 guyu login 并输入手机号和验证码。不要让用户在对话中提供验证码或凭据，不要读取或输出已有登录配置。
+## 完成授权
 
-登录后可运行 guyu --json 问题 获得结构化回答，或 guyu search 关键词 查找视频。CLI 不需要后台服务和定时任务。
+用户回复完成授权后，执行一次：
 
-## 更新
+```sh
+guyu login finish --json
+```
 
-重新安装相同 GitHub URL 即可更新。需要可复现版本时用 #提交号或 #标签固定版本，不要改写用户的登录配置或服务地址。
+status 为 authorized 表示完成，可以查询。pending 表示用户尚未授权，告诉用户先完成网页授权后再继续，禁止用循环、定时器或后台任务反复领取。denied 表示用户拒绝授权，应停止。
+
+链接 10 分钟有效。过期时按用户请求重新执行 guyu login。用户取消时执行 guyu login cancel。不要自动反复创建新链接，不要把授权链接发给其他人，不要修改其域名或参数。
+
+默认流程不启动本机回调监听，浏览器和 Agent 可以不在同一台设备。不要使用旧版 guyu login browser 流程。
+
+## 查询
+
+完成后直接用 guyu 查询用户的问题，需要引用时保留来源与视频时间戳。退出登录由 Agent 执行 guyu logout。

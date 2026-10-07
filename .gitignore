@@ -1,6 +1,6 @@
 node_modules/
-*.tgz
 .DS_Store
 .env
 .env.*
-# dist 是 GitHub 直接安装所需的程序，请一起上传。
+config.json
+*.log

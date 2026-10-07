@@ -1,20 +1,12 @@
 {
   "name": "@guyu/cli",
-  "version": "0.1.0",
-  "description": "谷雨视频知识库命令行客户端",
+  "version": "0.3.0",
+  "description": "谷雨知识库 CLI，Agent 链接授权登录",
   "type": "module",
   "bin": { "guyu": "dist/guyu.mjs" },
-  "files": ["dist", "INSTALL.md"],
+  "files": ["dist"],
   "engines": { "node": ">=22.16.0" },
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs",
-    "start": "node dist/guyu.mjs"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "esbuild": "^0.25.0",
-    "typescript": "~5.9.3"
-  }
+  "scripts": { "build": "node scripts/build.mjs", "test": "node --test tests/*.test.mjs" },
+  "devDependencies": { "esbuild": "^0.25.0" },
+  "repository": { "type": "git", "url": "https://github.com/aimakersummit/guyu_cli.git" }
 }
